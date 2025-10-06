@@ -4,6 +4,7 @@
     "": {
       "name": "nestjs-llm-tools",
       "devDependencies": {
+        "@eslint/eslintrc": "^3.3.1",
         "@eslint/js": "^9.37.0",
         "@nestjs/platform-express": "^11.1.6",
         "@nestjs/testing": "^11.1.6",
