@@ -85,19 +85,61 @@ export class WeatherService {
 }
 ```
 
-### 3. Access Tool Definitions
+### 3. Use the LlmToolsService
 
-The module automatically discovers and registers all tools. You can inject `LlmToolsService` to access them:
+The module automatically discovers and registers all tools. Inject `LlmToolsService` to access and execute them:
+
+```typescript
+import { Injectable } from '@nestjs/common';
+import { LlmToolsService } from 'nestjs-llm-tools';
+
+@Injectable()
+export class LlmService {
+  constructor(private readonly llmToolsService: LlmToolsService) {}
+
+  async chat(userMessage: string) {
+    // Get all available tools
+    const tools = this.llmToolsService.getTools();
+
+    // Send to your LLM API (e.g., Anthropic, OpenAI)
+    const response = await yourLlmApi.sendMessage({
+      message: userMessage,
+      // WARN: You need to transform the tool definitions accordingly
+      tools: tools
+    });
+
+    // If the LLM wants to call a tool
+    if (response.toolCalls) {
+      for (const toolCall of response.toolCalls) {
+        const result = await this.llmToolsService.callTool(
+          toolCall.name,
+          toolCall.parameters
+        );
+
+        // Send result back to LLM
+        // ...
+      }
+    }
+
+    return response;
+  }
+}
+```
+
+#### Direct Token Injection
+
+You can also inject the tool container token directly if you only need the definitions:
 
 ```typescript
 import { Injectable, Inject } from '@nestjs/common';
-import { LlmToolsService, TOOL_CONTAINER_TOKEN } from 'nestjs-llm-tools';
+import { TOOL_CONTAINER_TOKEN } from 'nestjs-llm-tools';
+import type { LlmToolDefinition } from 'nestjs-llm-tools';
 
 @Injectable()
 export class MyService {
   constructor(
     @Inject(TOOL_CONTAINER_TOKEN)
-    private readonly tools: any[]
+    private readonly tools: LlmToolDefinition[]
   ) {
     // Access all registered tools
     console.log(this.tools);
@@ -125,6 +167,53 @@ Marks a method parameter as a tool parameter.
   - `type?: ZodType` - Zod schema for parameter validation
   - `description?: string` - Parameter description for the LLM
 
+### Services
+
+#### `LlmToolsService`
+
+The main service for interacting with registered LLM tools.
+
+**Methods:**
+
+##### `getTools(): LlmToolDefinition[]`
+
+Retrieves all registered LLM tool definitions. Returns a copy of the tool definitions array that can be sent to LLM APIs.
+
+```typescript
+const tools = this.llmToolsService.getTools();
+// Returns array of tool definitions with name, description, and parameters
+```
+
+##### `callTool(name: string, params: Record<string, unknown>, inject?: Record<number, unknown>): any`
+
+Executes a registered LLM tool by name with the provided parameters.
+
+- **Parameters:**
+  - `name` - The name of the tool to execute
+  - `params` - Parameters from the LLM function call, keyed by parameter name
+  - `inject` - (Optional) Additional parameters to inject by index position for context injection
+
+- **Returns:** The result from executing the tool handler
+
+- **Throws:**
+  - `Error` if the tool name is not found
+  - `Error` if a parameter name doesn't match any defined parameter
+
+```typescript
+// Basic usage
+const result = await this.llmToolsService.callTool(
+  'WeatherService.getWeather',
+  { location: 'San Francisco, CA', units: 'celsius' }
+);
+
+// With parameter injection (e.g., for request context)
+const result = await this.llmToolsService.callTool(
+  'UserService.getCurrentUser',
+  {},
+  { 0: request.user } // Inject at parameter index 0
+);
+```
+
 ### Module Options
 
 #### `LlmToolsModuleOptions`
@@ -141,38 +230,23 @@ interface LlmToolsModuleOptions {
 }
 ```
 
-### Types
-
-#### `LlmToolDefinition`
-
-```typescript
-interface LlmToolDefinition {
-  name: string;
-  parameters: {
-    name: string;
-    type: string;
-    description?: string;
-  };
-}
-```
-
 ## Development
 
 ### Setup
 
 ```bash
 # Install dependencies
-bun install
+pnpm install
 
 # Run linter
-bun run lint
+pnpm run lint
 ```
 
 ### Testing
 
 ```bash
 # Run tests
-bun test
+pnpm run test
 ```
 
 ### Project Structure
