@@ -31,6 +31,7 @@ export class LlmToolsModule {
         LlmToolsService,
         { provide: MODULE_CONFIG_TOKEN, useValue: options },
       ],
+      global: true,
       exports: [LlmToolsService],
     };
   }

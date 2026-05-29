@@ -1,6 +1,6 @@
-import { MODULE_CONFIG_TOKEN, TOOL_CONTAINER_TOKEN } from "@/constants";
-import { LlmTool, ToolParam } from "@/decorators";
-import { LlmToolsLoader } from "@/llm-tools.loader";
+import { MODULE_CONFIG_TOKEN, TOOL_CONTAINER_TOKEN } from "../lib/constants";
+import { LlmTool, ToolParam } from "../lib/decorators";
+import { LlmToolsLoader } from "../lib/llm-tools.loader";
 import { DiscoveryModule } from "@nestjs/core";
 import { Test, TestingModule } from "@nestjs/testing";
 
@@ -35,6 +35,6 @@ describe("llm-tools.loader", () => {
   it("should find defined tools", () => {
     const container = moduleDef.get(TOOL_CONTAINER_TOKEN);
     expect(container).toHaveLength(1);
-    expect(container[0].name).toBe("testTool");
+    expect(container[0].name).toBe("MockToolService.testTool");
   });
 });

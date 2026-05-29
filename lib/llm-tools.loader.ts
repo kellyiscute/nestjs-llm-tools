@@ -7,7 +7,13 @@ import {
   TOOL_PARAM_METAKEY,
   TOOLS_METAKEY,
 } from "./constants";
-import type { LlmToolDefinition, ToolParamOptions } from "./types";
+import type {
+  LlmToolDefinition,
+  LlmToolParam,
+  MappedToolDefinition,
+  MappedToolParam,
+  ToolParamOptions,
+} from "./types";
 
 function providerFilter(wrapper: InstanceWrapper) {
   return !wrapper.isAlias && wrapper.instance;
@@ -51,13 +57,39 @@ export class LlmToolsLoader implements OnApplicationBootstrap {
           .filter(([, v]) => v !== undefined),
       );
 
+      const mapped: Record<string, MappedToolDefinition> = {};
       const defs = Object.entries(definedTools).map(([methodName, options]) => {
-        const params = paramsData[methodName];
-        return {
-          name: this.moduleOptions.prefixClassName ? `${""}.${methodName}` : methodName,
+        const params = paramsData[methodName] as Record<string, LlmToolParam>;
+        const m = {
+          name: this.moduleOptions.prefixClassName ? `${provider.name}.${methodName}` : methodName,
           description: (options as ToolParamOptions)?.description,
           parameters: params,
         };
+
+        const paramLengths = Reflect.getMetadata(
+          "design:paramtypes",
+          Object.getPrototypeOf(provider.instance),
+          methodName,
+        ).length;
+        const mappedParams = Object.fromEntries(
+          Object.entries(params).map<[string, MappedToolParam]>(([i, p]) => [
+            p.name,
+            {
+              ...p,
+              paramIndex: Number.parseInt(i),
+            },
+          ]),
+        );
+
+        mapped[m.name] = {
+          ...m,
+          handler: provider.instance[methodName],
+          handlerParamLen: paramLengths,
+          parameters: mappedParams,
+          instance: provider.instance,
+        };
+
+        return m;
       });
 
       this.container.push(...defs);

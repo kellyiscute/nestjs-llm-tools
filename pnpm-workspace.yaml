@@ -1,0 +1,3 @@
+allowBuilds:
+  '@nestjs/core': true
+  unrs-resolver: set this to true or false
