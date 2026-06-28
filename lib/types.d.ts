@@ -2,7 +2,7 @@ import type { ZodType } from "zod";
 
 export interface LlmToolParam {
   name: string;
-  type: string;
+  type: string | ZodType;
   description?: string;
 }
 
@@ -14,7 +14,7 @@ export interface LlmToolDefinition {
 
 export interface ToolParamOptions {
   name?: string;
-  type?: ZodType;
+  type?: ZodType | "string" | "number" | "boolean";
   description?: string;
 }
 

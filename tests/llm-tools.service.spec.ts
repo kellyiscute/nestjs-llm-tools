@@ -4,6 +4,8 @@ import { Test, TestingModule } from "@nestjs/testing";
 import { LlmToolsService } from "../lib/llm-tools.service";
 import { MAPPED_TOOLS_TOKEN, TOOL_CONTAINER_TOKEN } from "../lib/constants";
 import type { LlmToolDefinition, MappedToolDefinition } from "../lib/types";
+import z from "zod";
+import Ajv from "ajv";
 
 describe("LlmToolsService", () => {
   let service: LlmToolsService;
@@ -59,6 +61,18 @@ describe("LlmToolsService", () => {
         description: "Tool with no parameters",
         parameters: {},
       },
+      {
+        name: "zodTool",
+        description: "Tool with ZodType",
+        parameters: {
+          0: { name: "param1", type: z.enum(["A", "B"]) },
+          1: { name: "param2", type: z.literal("Literal") },
+          2: { name: "param3", type: z.object({"a": z.string(), b: z.number(), c: z.boolean().optional()}) },
+          3: { name: "param4", type: z.number().optional() },
+          4: { name: "param4", type: z.null() },
+          5: { name: "param4", type: z.string().array().nullable() },
+        },
+      },
     ];
 
     const module: TestingModule = await Test.createTestingModule({
@@ -91,7 +105,7 @@ describe("LlmToolsService", () => {
     it("should return array of tools from container", () => {
       const tools = service.getTools();
       expect(tools).toEqual(mockContainer);
-      expect(tools).toHaveLength(2);
+      expect(tools).toHaveLength(3);
       expect(tools[0]?.name).toBe("testTool");
       expect(tools[1]?.name).toBe("noParamsTool");
     });
@@ -263,6 +277,15 @@ describe("LlmToolsService", () => {
         expect(error.message).toContain("wrongParam");
         expect(error.message).toContain("testTool");
         expect(error.message).toContain("No definition found");
+      }
+    });
+
+    it("should convert to OpenAI SDK standard tool definition", () => { 
+      const tools = service.getOpenAiTools();
+      const ajv = new Ajv();
+      for (const tool of tools) {
+        const result = ajv.validateSchema(tool.function.parameters!, true);
+        if (!result) throw new Error("Invalid JSON Schema");
       }
     });
   });

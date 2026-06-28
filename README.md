@@ -17,6 +17,8 @@ npm install nestjs-llm-tools
 # or
 yarn add nestjs-llm-tools
 # or
+pnpm add nestjs-llm-tools
+# or
 bun add nestjs-llm-tools
 ```
 
@@ -61,15 +63,10 @@ import { z } from 'zod';
 export class WeatherService {
   @LlmTool('Get the current weather for a specific location')
   getWeather(
-    @ToolParam({
-      name: 'location',
-      type: z.string(),
-      description: 'The city and state, e.g., San Francisco, CA'
-    })
+    @ToolParam({ description: 'The city and state, e.g., San Francisco, CA' })
     location: string,
 
     @ToolParam({
-      name: 'units',
       type: z.enum(['celsius', 'fahrenheit']).optional(),
       description: 'Temperature unit'
     })
@@ -83,6 +80,39 @@ export class WeatherService {
     };
   }
 }
+```
+
+### Type Inference Rules
+
+The `@ToolParam()` decorator supports automatic type and name inference:
+
+- **Parameter names** are automatically inferred from function signatures
+- **Primitive types** (`string`, `number`, `boolean`) are automatically inferred from TypeScript types
+- **Complex types** (enums, objects, arrays, unions) require explicit Zod schemas
+
+```typescript
+// ✅ Primitive types - no explicit type needed
+@ToolParam({ description: 'User name' })
+name: string
+
+@ToolParam({ description: 'User age' })
+age: number
+
+@ToolParam({ description: 'Is active' })
+isActive: boolean
+
+// ✅ Complex types - explicit Zod schema required
+@ToolParam({
+  type: z.enum(['admin', 'user', 'guest']),
+  description: 'User role'
+})
+role: string
+
+@ToolParam({
+  type: z.object({ street: z.string(), city: z.string() }),
+  description: 'User address'
+})
+address: { street: string; city: string }
 ```
 
 ### 3. Use the LlmToolsService
@@ -184,6 +214,32 @@ const tools = this.llmToolsService.getTools();
 // Returns array of tool definitions with name, description, and parameters
 ```
 
+##### `getOpenAiTools(): ChatCompletionFunctionTool[]`
+
+Returns tools formatted for the OpenAI SDK. Each tool includes the function name, description, and parameters as JSON Schema.
+
+```typescript
+import OpenAI from 'openai';
+
+const openai = new OpenAI();
+const tools = this.llmToolsService.getOpenAiTools();
+
+const response = await openai.chat.completions.create({
+  model: 'gpt-4',
+  messages: [{ role: 'user', content: 'What is the weather in Tokyo?' }],
+  tools: tools,
+});
+```
+
+##### `getToolsWithJsonSchemaParams()`
+
+Returns tool definitions with parameters converted to JSON Schema format. Useful for LLM APIs that require JSON Schema parameter definitions.
+
+```typescript
+const tools = this.llmToolsService.getToolsWithJsonSchemaParams();
+// Returns tools with parameters as JSON Schema objects
+```
+
 ##### `callTool(name: string, params: Record<string, unknown>, inject?: Record<number, unknown>): any`
 
 Executes a registered LLM tool by name with the provided parameters.
@@ -202,13 +258,13 @@ Executes a registered LLM tool by name with the provided parameters.
 ```typescript
 // Basic usage
 const result = await this.llmToolsService.callTool(
-  'WeatherService.getWeather',
+  'WeatherService_getWeather',
   { location: 'San Francisco, CA', units: 'celsius' }
 );
 
 // With parameter injection (e.g., for request context)
 const result = await this.llmToolsService.callTool(
-  'UserService.getCurrentUser',
+  'UserService_getCurrentUser',
   {},
   { 0: request.user } // Inject at parameter index 0
 );

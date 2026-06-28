@@ -1,6 +1,8 @@
 import { Inject, Injectable } from "@nestjs/common";
 import { MAPPED_TOOLS_TOKEN, TOOL_CONTAINER_TOKEN } from "./constants";
 import type { LlmToolDefinition, MappedToolDefinition } from "./types";
+import type { ChatCompletionFunctionTool } from "openai/resources/index.mjs";
+import { type JSONSchema } from "json-schema-typed";
 
 /**
  * Service for managing and executing LLM tools.
@@ -36,7 +38,7 @@ export class LlmToolsService {
     private readonly tools: Record<string, MappedToolDefinition>,
     @Inject(TOOL_CONTAINER_TOKEN)
     private readonly container: LlmToolDefinition[],
-  ) {}
+  ) { }
 
   /**
    * Retrieves all registered LLM tool definitions.
@@ -62,6 +64,52 @@ export class LlmToolsService {
    */
   getTools() {
     return [...this.container];
+  }
+
+  convertToolParamsToJsonSchema(toolParams: LlmToolDefinition["parameters"]) {
+    const params: Record<string, JSONSchema> = {};
+
+    for (const p of Object.values(toolParams)) {
+      if (typeof p.type === "string") {
+        params[p.name] = {
+          description: p.description,
+          type: p.type,
+        };
+      } else {
+        const schema = p.type.toJSONSchema() as any;
+        params[p.name] = schema;
+      }
+    }
+    return {
+      type: "object",
+      properties: params,
+      required: Array.from(Object.keys(params)),
+      additionalProperties: false,
+    }
+  }
+
+  getToolsWithJsonSchemaParams() {
+    return this.container.map((t) => ({
+      ...t,
+      parameters: this.convertToolParamsToJsonSchema(t.parameters),
+    }));
+  }
+
+  getOpenAiTools() {
+    const result: ChatCompletionFunctionTool[] = [];
+    for (const tool of this.container) {
+      const t: ChatCompletionFunctionTool = {
+        type: "function",
+        function: {
+          name: tool.name,
+          description: tool.description,
+          parameters: this.convertToolParamsToJsonSchema(tool.parameters),
+        },
+      };
+      result.push(t);
+    }
+
+    return result;
   }
 
   /**

@@ -2,7 +2,7 @@
   "name": "nestjs-llm-tools",
   "module": "index.ts",
   "type": "module",
-  "private": true,
+  "version": "0.0.1",
   "scripts": {
     "lint": "eslint \"lib/**/*.ts\" --fix",
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js"
@@ -17,11 +17,14 @@
     "@types/jest": "^30.0.0",
     "@typescript-eslint/eslint-plugin": "^8.60.0",
     "@typescript-eslint/parser": "^8.60.0",
+    "ajv": "^8.20.0",
     "eslint": "^9.37.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.4",
     "globals": "^16.4.0",
     "jest": "^30.4.2",
+    "json-schema-typed": "^8.0.2",
+    "openai": "^6.42.0",
     "prettier": "3.6.2",
     "ts-jest": "^29.4.11",
     "typescript-eslint": "^8.45.0"
