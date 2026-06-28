@@ -5,7 +5,8 @@ import type { ToolParamOptions } from "./types";
 
 export const LlmTool = (description: string) => SetMetadata(TOOLS_METAKEY, { description });
 
-const PRIMITIVE_TYPE_MAP: Map<object, string> = new Map();
+const PRIMITIVES = ["string", "number", "boolean"] as const;
+const PRIMITIVE_TYPE_MAP: Map<object, (typeof PRIMITIVES)[number]> = new Map();
 PRIMITIVE_TYPE_MAP.set(String, "string");
 PRIMITIVE_TYPE_MAP.set(Number, "number");
 PRIMITIVE_TYPE_MAP.set(Boolean, "boolean");

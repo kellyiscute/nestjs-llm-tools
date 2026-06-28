@@ -38,7 +38,7 @@ export class LlmToolsService {
     private readonly tools: Record<string, MappedToolDefinition>,
     @Inject(TOOL_CONTAINER_TOKEN)
     private readonly container: LlmToolDefinition[],
-  ) { }
+  ) {}
 
   /**
    * Retrieves all registered LLM tool definitions.
@@ -85,7 +85,7 @@ export class LlmToolsService {
       properties: params,
       required: Array.from(Object.keys(params)),
       additionalProperties: false,
-    }
+    };
   }
 
   getToolsWithJsonSchemaParams() {
