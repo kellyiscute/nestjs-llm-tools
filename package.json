@@ -1,5 +1,6 @@
 {
   "name": "nestjs-llm-tools",
+  "main": "dist/index.js",
   "module": "dist/index.js",
   "type": "module",
   "version": "0.0.1",
