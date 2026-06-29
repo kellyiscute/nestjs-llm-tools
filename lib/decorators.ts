@@ -5,8 +5,8 @@ import type { ToolParamOptions } from "./types";
 
 export const LlmTool = (description: string) => SetMetadata(TOOLS_METAKEY, { description });
 
-const PRIMITIVES = ["string", "number", "boolean"] as const;
-const PRIMITIVE_TYPE_MAP: Map<object, (typeof PRIMITIVES)[number]> = new Map();
+type PRIMITIVES = "string" | "number" | "boolean";
+const PRIMITIVE_TYPE_MAP: Map<object, PRIMITIVES> = new Map();
 PRIMITIVE_TYPE_MAP.set(String, "string");
 PRIMITIVE_TYPE_MAP.set(Number, "number");
 PRIMITIVE_TYPE_MAP.set(Boolean, "boolean");
@@ -31,7 +31,7 @@ export const ToolParam = (option?: ToolParamOptions) => {
     const designType = Reflect.getMetadata("design:paramtypes", target, propertyKey)[
       parameterIndex
     ];
-    if (!PRIMITIVE_TYPE_MAP.has(designType)) {
+    if (option?.type == null && !PRIMITIVE_TYPE_MAP.has(designType)) {
       throw new Error(
         `Cannot use inferred type ${designType.toString()} except for number, string or boolean`,
       );
